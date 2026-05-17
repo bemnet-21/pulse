@@ -1,5 +1,6 @@
 package com.example.pulse.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,12 +19,14 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -39,7 +42,7 @@ fun WelcomeScreen() {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
@@ -52,29 +55,47 @@ fun WelcomeScreen() {
 
         Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f)
+            ),
+            border = BorderStroke(
+                1.dp,
+                Color.White.copy(alpha = 0.08f)
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 0.dp
+            )
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(32.dp)
 
             ) {
                 Text(
                     text = "Curated Content",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 32.sp,
                     fontFamily = FontFamily.Monospace,
                     textAlign = TextAlign.Left,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Hand-picked articles from the industry's brightest minds. No fluff, just pure knowledge",
                     fontWeight = FontWeight.Normal,
-                    fontSize = 16.sp,
+                    fontSize = 20.sp,
                     lineHeight = 24.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Image(
+                    painter = painterResource(R.drawable.hero),
+                    contentDescription = "Hero",
+                    modifier = Modifier.size(200.dp)
                 )
 
             }
@@ -95,7 +116,7 @@ fun WelcomeScreen() {
             shape = RoundedCornerShape(12.dp)
         ) {
             Row(
-
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Get Started",
