@@ -13,6 +13,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.pulse.ui.screens.FeedScreen
 import com.example.pulse.ui.screens.WelcomeScreen
 import com.example.pulse.ui.theme.PulseTheme
 
@@ -22,7 +26,22 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             PulseTheme {
-                WelcomeScreen()
+                val navController = rememberNavController()
+                NavHost(navController = navController, startDestination = "welcome") {
+                    composable("welcome") {
+                        WelcomeScreen(
+                            onNavigateToFeed = {
+                                navController.navigate("feed") {
+                                    popUpTo("welcome") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+
+                    composable("feed") {
+                        FeedScreen()
+                    }
+                }
             }
         }
     }
