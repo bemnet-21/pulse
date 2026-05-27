@@ -2,6 +2,7 @@ package com.example.pulse.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -136,7 +137,10 @@ fun ArticleCard(article: DevToArticle) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FeedScreen(viewModel: FeedViewModel = viewModel()) {
+fun FeedScreen(
+    onArticleClick: (Int) -> Unit,
+    viewModel: FeedViewModel = viewModel()
+) {
     val uiState by viewModel.uiState.collectAsState()
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -207,7 +211,13 @@ fun FeedScreen(viewModel: FeedViewModel = viewModel()) {
 
                         // Article Feed
                         items(articles) { article ->
-                            ArticleCard(article)
+                            Box(
+                                modifier = Modifier.clickable{
+                                    onArticleClick(article.id)
+                                }
+                            ) {
+                                ArticleCard(article)
+                            }
                         }
 
                         // Add a little space at the bottom

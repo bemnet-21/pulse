@@ -13,9 +13,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.pulse.ui.screens.DetailScreen
 import com.example.pulse.ui.screens.FeedScreen
 import com.example.pulse.ui.screens.WelcomeScreen
 import com.example.pulse.ui.theme.PulseTheme
@@ -39,7 +42,25 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("feed") {
-                        FeedScreen()
+                        FeedScreen(
+                            onArticleClick = { articleId ->
+                                navController.navigate("article/$articleId")
+                            }
+                        )
+                    }
+
+                    composable(
+                        route = "article/{articleId}",
+                        arguments = listOf(navArgument("articleId") { type = NavType.IntType })
+                    ) { backStackEntry ->
+
+                        val articleId = backStackEntry.arguments?.getInt("articleId") ?: return@composable
+
+                        DetailScreen(
+                            articleId = articleId,
+                            onBackClick = { navController.popBackStack() }
+                        )
+
                     }
                 }
             }
