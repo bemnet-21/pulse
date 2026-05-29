@@ -1,6 +1,7 @@
 package com.yourname.devpulse.ui.screens
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -48,7 +49,7 @@ fun BookmarkArticleCard(entity: ArticleEntity) {
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
                 Text(
-                    text = entity.tags.split(",").firstOrNull()?.uppercase() ?: "DEV",
+                    text = entity.tags[0].uppercase(),
                     color = MaterialTheme.colorScheme.secondary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
@@ -135,7 +136,13 @@ fun BookmarksScreen(
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
                 items(bookmarks) { entity ->
-                    BookmarkArticleCard(entity)
+                    Box(
+                        modifier = Modifier.clickable(
+                            onClick = { onArticleClick(entity.id) }
+                        )
+                    ) {
+                        BookmarkArticleCard(entity)
+                    }
                 }
             }
         }

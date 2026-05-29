@@ -27,7 +27,8 @@ data class DevToArticleDetail(
     val reading_time_minutes: Int,
     val published_at: String,
     val user: DevToUser,
-    val tags: List<String>
+    val tags: List<String>,
+    val description: String
 )
 interface DevToApi {
     @GET("articles")

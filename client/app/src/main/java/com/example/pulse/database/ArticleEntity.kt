@@ -11,8 +11,8 @@ data class ArticleEntity(
     val description: String,
     val coverImage: String?,
     val bodyHtml: String?,
-    val tags: String,
+    val tags: List<String>,
     val reading_time_minutes: Int,
+    val date: String
 
-
-)
+    )

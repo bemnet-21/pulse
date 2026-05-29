@@ -4,10 +4,13 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.example.pulse.database.ArticleDao
 import com.example.pulse.database.ArticleEntity
+import com.example.pulse.database.Converters
 
 @Database(entities = [ArticleEntity::class], version = 1, exportSchema = false)
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun articleDao(): ArticleDao
 
