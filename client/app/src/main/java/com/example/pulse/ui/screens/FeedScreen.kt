@@ -1,6 +1,5 @@
 package com.example.pulse.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +17,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -27,6 +31,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -46,15 +53,82 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.pulse.models.Article
-import com.example.pulse.models.dummyArticles
 import com.example.pulse.models.dummyCategories
 import com.example.pulse.network.DevToArticle
 import com.example.pulse.viewmodels.FeedUiState
 import com.example.pulse.viewmodels.FeedViewModel
+import com.yourname.devpulse.viewmodels.BookmarkViewModel
+
+enum class NavRoute {
+    Home, Bookmarks, Profile
+}
 
 @Composable
-fun ArticleCard(article: DevToArticle) {
+fun PulseBottomBar(
+    currentRoute: NavRoute,
+    onNavigate: (NavRoute) -> Unit
+) {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = Color.Gray,
+        tonalElevation = 8.dp
+    ) {
+        NavigationBarItem(
+            selected = currentRoute == NavRoute.Home,
+            onClick = { onNavigate(NavRoute.Home) },
+            icon = {
+                Icon(
+                    imageVector = if (currentRoute == NavRoute.Home) Icons.Filled.Home else Icons.Outlined.Home,
+                    contentDescription = "Home"
+                )
+            },
+            label = { Text("Home") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                indicatorColor = MaterialTheme.colorScheme.surface
+            )
+        )
+
+        NavigationBarItem(
+            selected = currentRoute == NavRoute.Bookmarks,
+            onClick = { onNavigate(NavRoute.Bookmarks) },
+            icon = {
+                Icon(
+                    imageVector = if (currentRoute == NavRoute.Bookmarks) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                    contentDescription = "Bookmarks"
+                )
+            },
+            label = { Text("Offline") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                indicatorColor = MaterialTheme.colorScheme.surface
+            )
+        )
+
+        NavigationBarItem(
+            selected = currentRoute == NavRoute.Profile,
+            onClick = { onNavigate(NavRoute.Profile) },
+            icon = {
+                Icon(
+                    imageVector = if (currentRoute == NavRoute.Profile) Icons.Filled.Person else Icons.Outlined.Person,
+                    contentDescription = "Profile"
+                )
+            },
+            label = { Text("Profile") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                indicatorColor = MaterialTheme.colorScheme.surface
+            )
+        )
+    }
+}
+
+// 3. Article Card Component
+@Composable
+fun ArticleCard(article: DevToArticle, isBookmarked: Boolean) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -78,7 +152,7 @@ fun ArticleCard(article: DevToArticle) {
                     fontFamily = FontFamily.Monospace
                 )
 
-                Spacer(modifier = Modifier.weight(2f))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = article.title,
@@ -89,7 +163,7 @@ fun ArticleCard(article: DevToArticle) {
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.weight(2f))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = article.description,
@@ -100,7 +174,7 @@ fun ArticleCard(article: DevToArticle) {
                     lineHeight = 20.sp
                 )
 
-                Spacer(modifier = Modifier.weight(2f))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -112,10 +186,12 @@ fun ArticleCard(article: DevToArticle) {
                         fontSize = 12.sp
                     )
                     Spacer(modifier = Modifier.weight(1f))
+
                     Icon(
-                        imageVector = Icons.Default.Settings,
+                        imageVector = if(isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
                         contentDescription = "Save",
-                        tint = Color.Gray,
+                        // Make the icon primary color if bookmarked!
+                        tint = if(isBookmarked) MaterialTheme.colorScheme.primary else Color.Gray,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -130,18 +206,20 @@ fun ArticleCard(article: DevToArticle) {
                 contentScale = ContentScale.Crop
             )
         }
-
     }
 }
 
-
+// 4. Main Feed Screen Component
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     onArticleClick: (Int) -> Unit,
-    viewModel: FeedViewModel = viewModel()
+    onNavigateBottomBar: (NavRoute) -> Unit,
+    viewModel: FeedViewModel = viewModel(),
+    bookmarkViewModel: BookmarkViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -149,17 +227,26 @@ fun FeedScreen(
                 title = {
                     Text(
                         text = "<DevPulse />",
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                        fontFamily = FontFamily.Monospace,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
                     )
-                }, colors = TopAppBarDefaults.topAppBarColors(
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
+        },
+        // Plug in the bottom bar here
+        bottomBar = {
+            PulseBottomBar(
+                currentRoute = NavRoute.Home,
+                onNavigate = { route -> onNavigateBottomBar(route) }
+            )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        // Use paddingValues here so the list doesn't get hidden behind the top/bottom bars
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             when (uiState) {
                 is FeedUiState.Loading -> {
                     CircularProgressIndicator(
@@ -177,9 +264,7 @@ fun FeedScreen(
                 is FeedUiState.Success -> {
                     val articles = (uiState as FeedUiState.Success).articles
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(paddingValues)
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         // Horizontal Discovery Chips
                         item {
@@ -191,7 +276,7 @@ fun FeedScreen(
                             ) {
                                 items(dummyCategories) { category ->
                                     FilterChip(
-                                        selected = category == "All", // Hardcoded selected state for now
+                                        selected = category == "All",
                                         onClick = { /* TODO */ },
                                         label = { Text(category, color = MaterialTheme.colorScheme.onPrimary) },
                                         colors = FilterChipDefaults.filterChipColors(
@@ -212,20 +297,20 @@ fun FeedScreen(
                         // Article Feed
                         items(articles) { article ->
                             Box(
-                                modifier = Modifier.clickable{
+                                modifier = Modifier.clickable {
                                     onArticleClick(article.id)
                                 }
                             ) {
-                                ArticleCard(article)
+                                val isBookmarked by bookmarkViewModel.checkIsBookmarked(article.id).collectAsState()
+                                ArticleCard(article, isBookmarked)
                             }
                         }
 
-                        // Add a little space at the bottom
+                        // Space at bottom for scrolling
                         item { Spacer(modifier = Modifier.height(24.dp)) }
                     }
                 }
             }
         }
-
     }
 }

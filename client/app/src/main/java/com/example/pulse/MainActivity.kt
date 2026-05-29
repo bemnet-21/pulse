@@ -20,8 +20,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.pulse.ui.screens.DetailScreen
 import com.example.pulse.ui.screens.FeedScreen
+import com.example.pulse.ui.screens.NavRoute
 import com.example.pulse.ui.screens.WelcomeScreen
 import com.example.pulse.ui.theme.PulseTheme
+import com.yourname.devpulse.ui.screens.BookmarksScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,6 +47,10 @@ class MainActivity : ComponentActivity() {
                         FeedScreen(
                             onArticleClick = { articleId ->
                                 navController.navigate("article/$articleId")
+                            },
+                            onNavigateBottomBar = { route ->
+                                if(route == NavRoute.Bookmarks) navController.navigate("bookmarks")
+                                if(route == NavRoute.Profile) navController.navigate("profile")
                             }
                         )
                     }
@@ -61,6 +67,18 @@ class MainActivity : ComponentActivity() {
                             onBackClick = { navController.popBackStack() }
                         )
 
+                    }
+
+                    composable("bookmarks") {
+                        BookmarksScreen(
+                            onArticleClick = { articleId ->
+                                navController.navigate("article/$articleId")
+                            },
+                            onNavigateBottomBar = { route ->
+                                if(route == NavRoute.Home) navController.navigate("feed")
+                                if(route == NavRoute.Profile) navController.navigate("profile")
+                            }
+                        )
                     }
                 }
             }

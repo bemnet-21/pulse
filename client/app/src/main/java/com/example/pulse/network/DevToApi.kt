@@ -13,12 +13,21 @@ data class DevToArticle(
     val cover_image: String?
 )
 
+data class DevToUser(
+    val name: String,
+    val profile_image: String
+)
+
 data class DevToArticleDetail(
     val id: Int,
     val title: String,
     val body_html: String,
     val cover_image: String?,
-    val published_at: String
+    val social_image: String?,
+    val reading_time_minutes: Int,
+    val published_at: String,
+    val user: DevToUser,
+    val tags: List<String>
 )
 interface DevToApi {
     @GET("articles")
