@@ -1,11 +1,30 @@
-import { articles } from "../data.js"
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pool from "../db/index.ts";
 
-export const fetchArticles = () => {
-    return articles
+
+const adapter = new PrismaPg(pool)
+const prisma = new PrismaClient({ adapter })
+
+export const fetchArticles = async () => {
+    const response = await prisma.article.findMany({
+        select: {
+            id: true,
+            title: true,
+            description: true,
+            tags: true,
+            reading_time_minutes: true,
+            cover_image: true,
+        },
+        orderBy: { published_at: "desc" }
+    })
+    return response
 }
 
-export const fetchArticleById = (id: string) => {
+export const fetchArticleById = async (id: string) => {
     const articleId = parseInt(id)
-    const article = articles.find(a => a.id === articleId)
+    const article = await prisma.article.findUnique({
+        where: { id: articleId },
+    })
     return article
 }

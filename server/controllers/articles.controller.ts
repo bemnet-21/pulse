@@ -2,9 +2,9 @@ import type { Request, Response } from 'express';
 import { fetchArticleById, fetchArticles } from '../services/articles.service.js';
 import type { ArticleParam } from '../types.js';
 
-export const getArticles = (req: Request, res: Response) => {
+export const getArticles = async (req: Request, res: Response) => {
     try {
-        const articles = fetchArticles()
+        const articles = await fetchArticles()
         res.status(200).json({ 
             message : "Articles fetched successfully",
             data : articles
@@ -14,11 +14,11 @@ export const getArticles = (req: Request, res: Response) => {
     }
 }
 
-export const getArticleById = (req: Request<ArticleParam>, res: Response) => {
+export const getArticleById = async (req: Request<ArticleParam>, res: Response) => {
     const articleId = req.params.id
     if(!articleId) return res.status(400).json({ error: "Article ID is required." })
     try {
-        const article = fetchArticleById(articleId)
+        const article = await fetchArticleById(articleId)
         if(!article) return res.status(404).json({ error: "Article not found." })
         res.status(200).json({ 
             message : "Article fetched successfully",
