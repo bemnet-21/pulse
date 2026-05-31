@@ -4,6 +4,11 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 
+
+data class ApiResponse<T>(
+    val data: T,
+    val message: String
+)
 data class DevToArticle(
     val id: Int,
     val title: String,
@@ -27,7 +32,7 @@ data class DevToArticleDetail(
     val reading_time_minutes: Int,
     val published_at: String,
     val user: DevToUser,
-    val tags: List<String>,
+    val tags: String,
     val description: String
 )
 interface DevToApi {
@@ -35,10 +40,10 @@ interface DevToApi {
     suspend fun getArticles(
         @Query("per_page") perPage: Int = 15,
         @Query("top") top: Int = 1
-    ): List<DevToArticle>
+    ): ApiResponse<List<DevToArticle>>
 
     @GET("articles/{id}")
     suspend fun getArticleById(
         @Path("id") articleId: Int
-    ): DevToArticleDetail
+    ): ApiResponse<DevToArticleDetail>
 }

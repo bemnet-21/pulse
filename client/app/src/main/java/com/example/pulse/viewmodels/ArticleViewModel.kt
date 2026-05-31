@@ -35,7 +35,7 @@ class ArticleViewModel(application: Application): AndroidViewModel(application) 
                 _uiState.value = DetailUiState.SuccessLocal(localArticle)
             } else {
                 try {
-                    val article: DevToArticleDetail = RetrofitInstance.api.getArticleById(articleId)
+                    val article: DevToArticleDetail = RetrofitInstance.api.getArticleById(articleId).data
                     _uiState.value = DetailUiState.SuccessRemote(article)
                 } catch (e: Exception) {
                     _uiState.value = DetailUiState.Error("Failed to fetch article detail: ${e.message}")

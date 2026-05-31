@@ -79,9 +79,9 @@ fun DetailScreen(
                                         coverImage = r.cover_image,
                                         bodyHtml = r.body_html,
                                         // Normalize string "android,kotlin" to List
-                                        tags = r.tags,
+                                        tags = r.tags.split(","),
                                         reading_time_minutes = r.reading_time_minutes,
-                                        date = r.published_at
+                                        date = r.published_at ?: "2026-05-31"
 
                                     )
                                 }
@@ -129,7 +129,7 @@ fun DetailScreen(
                         title = remote.title
                         bodyHtml = remote.body_html
                         coverImage = remote.cover_image
-                        tags = remote.tags
+                        tags = remote.tags.split(",")
                         date = remote.published_at
                     }
 

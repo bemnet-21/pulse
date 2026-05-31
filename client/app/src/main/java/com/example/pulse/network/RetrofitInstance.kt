@@ -5,7 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.create
 
 object RetrofitInstance {
-    private const val BASE_URL = "https://dev.to/api/"
+    private const val BASE_URL = "https://pulse-2nee.onrender.com/api/v1/"
 
     val api: DevToApi by lazy {
         Retrofit.Builder()
