@@ -73,7 +73,7 @@ async function curateArticles() {
                                 profile_image: detail.user.profile_image ?? null,
                             }
                         }
-                    }
+                    },
                 },
             })
         }

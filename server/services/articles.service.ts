@@ -25,6 +25,21 @@ export const fetchArticleById = async (id: string) => {
     const articleId = parseInt(id)
     const article = await prisma.article.findUnique({
         where: { id: articleId },
+        include: {
+            user: true,
+        }
     })
     return article
+}
+
+/**
+ * Persists a generated AI summary back to the article row so that
+ * subsequent requests are served from the DB cache (no Gemini call).
+ */
+export const saveAiSummary = async (id: string, summary: string) => {
+    const articleId = parseInt(id)
+    await prisma.article.update({
+        where: { id: articleId },
+        data: { ai_summary: summary }
+    })
 }

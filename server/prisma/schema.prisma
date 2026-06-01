@@ -27,6 +27,7 @@ model Article {
   published_at String
   tags String
   description String
+  ai_summary String? @db.Text
   userId Int
   user User @relation(fields: [userId], references: [id])
 }

@@ -5,16 +5,21 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "prisma generate && tsc",
+    "generate": "prisma generate",
+    "build": "npm run generate && tsc",
+    "prestart": "npm run generate",
     "start": "node dist/index.js",
+    "preserve": "npm run generate",
     "watch": "tsc -w",
     "serve": "nodemon dist/index.js",
+    "predev": "npm run generate",
     "dev": "concurrently \"npm run watch\" \"npm run serve\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "axios": "^1.16.1",
