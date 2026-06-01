@@ -79,7 +79,6 @@ async function curateArticles() {
         }
 
     } catch(err) {
-        console.error("Error fetching articles:", err)
     } finally {
         await prisma.$disconnect()
     }

@@ -35,7 +35,6 @@ export const summarizeArticle = async (req: Request<ArticleParam>, res: Response
     if (!articleId) return res.status(400).json({ error: "Article ID is required." });
 
     try {
-        // Step 1 — Cache check: return immediately if summary already exists
         const article = await fetchArticleById(articleId);
         if (!article) return res.status(404).json({ error: "Article not found." });
 
@@ -46,27 +45,22 @@ export const summarizeArticle = async (req: Request<ArticleParam>, res: Response
             });
         }
 
-        // Step 2 — Validate that there is enough body content to summarize
         if (!article.body_html || article.body_html.length < 200) {
             return res.status(400).json({
                 error: "Article body is missing or too short to summarize."
             });
         }
 
-        // Step 3 — Generate summary via Gemini
         const summary = await generateSummary(article.body_html);
 
-        // Step 4 — Persist the result so future callers get the cached version
         await saveAiSummary(articleId, summary);
 
-        // Step 5 — Return the newly generated summary
         return res.status(200).json({
             message: "AI summary generated successfully.",
             data: { ai_summary: summary }
         });
 
     } catch (error: any) {
-        console.error("[summarizeArticle] AI service error:", error);
         return res.status(500).json({
             error: "AI service error: " + (error?.message || "Unknown error occurred.")
         });

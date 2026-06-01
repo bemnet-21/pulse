@@ -2,6 +2,10 @@ package com.example.pulse.ui.screens
 
 import android.app.Application
 import android.webkit.WebView
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -12,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.*
@@ -19,10 +24,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,6 +36,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.pulse.database.ArticleEntity
+import com.example.pulse.ui.theme.ElectricIndigo
+import com.example.pulse.ui.theme.Inter
+import com.example.pulse.ui.theme.JetBrain
+import com.example.pulse.ui.theme.MatteCharcoal
+import com.example.pulse.ui.theme.NeonTeal
 import com.example.pulse.utils.DateUtils
 import com.example.pulse.viewmodels.ArticleViewModel
 import com.example.pulse.viewmodels.DetailUiState
@@ -50,13 +60,36 @@ fun DetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val isBookmarked by bookmarkViewModel.checkIsBookmarked(articleId).collectAsState()
+    val isSummarizing by viewModel.isSummarizing.collectAsState()
+    val aiSummary by viewModel.aiSummary.collectAsState()
+
+    // Track whether the summary box should animate in
+    var summaryVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(aiSummary) {
+        if (aiSummary != null) summaryVisible = true
+    }
 
     LaunchedEffect(articleId) {
         viewModel.fetchArticleById(articleId)
     }
 
+    val scrollState = rememberScrollState()
+    val appBarColor by animateColorAsState(
+        targetValue = if (scrollState.value > 100) Color(0xFF0A0A0E) else Color.Transparent,
+        label = "appBarColor"
+    )
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.aiError.collect { errorMsg ->
+            snackbarHostState.showSnackbar(errorMsg)
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("") },
@@ -82,7 +115,6 @@ fun DetailScreen(
                                         tags = r.tags.split(","),
                                         reading_time_minutes = r.reading_time_minutes,
                                         date = r.published_at ?: "2026-05-31"
-
                                     )
                                 }
                                 else -> null
@@ -97,7 +129,7 @@ fun DetailScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = appBarColor)
             )
         }
     ) { paddingValues ->
@@ -111,12 +143,15 @@ fun DetailScreen(
                 }
                 is DetailUiState.SuccessLocal, is DetailUiState.SuccessRemote -> {
 
-                    // 1. DATA NORMALIZATION (Now including Tags)
+                    // 1. DATA NORMALIZATION
                     val title: String
                     val bodyHtml: String
                     val coverImage: String?
                     val tags: List<String>
                     val date: String
+                    val readingTime: Int
+                    // Pre-populate summary from the article if the backend already has one cached
+                    val cachedSummary: String?
 
                     if (state is DetailUiState.SuccessLocal) {
                         title = state.article.title
@@ -124,22 +159,47 @@ fun DetailScreen(
                         coverImage = state.article.coverImage
                         tags = state.article.tags
                         date = state.article.date
+                        readingTime = state.article.reading_time_minutes
+                        cachedSummary = null
                     } else {
                         val remote = (state as DetailUiState.SuccessRemote).article
                         title = remote.title
                         bodyHtml = remote.body_html
                         coverImage = remote.cover_image
                         tags = remote.tags.split(",")
-                        date = remote.published_at
+                        date = remote.published_at ?: "2026-05-31"
+                        readingTime = remote.reading_time_minutes
+                        cachedSummary = remote.ai_summary
                     }
 
-                    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                        AsyncImage(
-                            model = coverImage ?: "https://picsum.photos/600/300",
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxWidth().height(260.dp),
-                            contentScale = ContentScale.Crop
-                        )
+                    // Seed the aiSummary flow once with any server-cached value
+                    LaunchedEffect(cachedSummary) {
+                        if (cachedSummary != null && aiSummary == null) {
+                            viewModel.seedAiSummary(cachedSummary)
+                        }
+                    }
+
+                    Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
+                        Box(modifier = Modifier.fillMaxWidth().height(260.dp)) {
+                            AsyncImage(
+                                model = coverImage ?: "https://picsum.photos/600/300",
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                            // Bottom Scrim/Gradient
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(100.dp)
+                                    .align(Alignment.BottomCenter)
+                                    .background(
+                                        Brush.verticalGradient(
+                                            colors = listOf(Color.Transparent, Color(0xFF0A0A0E))
+                                        )
+                                    )
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -153,7 +213,30 @@ fun DetailScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // 2. THE TAGS ROW
+                        // METADATA CHIPS
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            SuggestionChip(
+                                onClick = {},
+                                label = { Text("${readingTime} min read", color = Color(0xFF94A3B8), fontSize = 12.sp) },
+                                colors = SuggestionChipDefaults.suggestionChipColors(containerColor = MatteCharcoal),
+                                border = null,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            SuggestionChip(
+                                onClick = {},
+                                label = { Text(DateUtils.formatPublishedDate(date), color = Color(0xFF94A3B8), fontSize = 12.sp) },
+                                colors = SuggestionChipDefaults.suggestionChipColors(containerColor = MatteCharcoal),
+                                border = null,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // 2. TAGS ROW
                         LazyRow(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -168,33 +251,40 @@ fun DetailScreen(
                                         text = tag.uppercase(),
                                         color = MaterialTheme.colorScheme.secondary,
                                         fontSize = 12.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = JetBrain,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
                         }
 
-                        Text(
-                            text = DateUtils.formatPublishedDate(date),
-                            color = Color.Gray,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(horizontal = 16.dp)
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // ── 3. AI KEY INSIGHTS SECTION ───────────────────────────────
+                        AiInsightsSection(
+                            aiSummary = aiSummary,
+                            isSummarizing = isSummarizing,
+                            summaryVisible = summaryVisible,
+                            onGenerateClick = { viewModel.fetchAiSummary(articleId) }
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // 3. THE ARTICLE BODY
+                        // 4. ARTICLE BODY
                         AndroidView(
                             factory = { context -> WebView(context).apply { setBackgroundColor(0x0A0A0E) } },
                             update = { webView ->
                                 val styledHtml = """
                                     <html>
                                     <head>
+                                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
                                         <style>
-                                            body { color: #F8FAFC; font-family: sans-serif; padding: 16px; line-height: 1.7; background-color: #0A0A0E; }
-                                            img { max-width: 100%; border-radius: 8px; margin: 16px 0; }
-                                            pre { background-color: #15151C; padding: 12px; border-radius: 8px; overflow-x: auto; color: #14B8A6; border: 1px solid #2A2A35;}
+                                            body { color: #F8FAFC; font-family: sans-serif; padding: 16px; line-height: 1.8; background-color: #0A0A0E; }
+                                            p, h1, h2, ul { margin-bottom: 1.5em; }
+                                            img { max-width: 100%; border-radius: 12px; border: 1px solid #2A2A35; box-shadow: 0 4px 6px rgba(0,0,0,0.5); margin: 2em auto; display: block; }
+                                            a { color: #14B8A6; text-decoration: underline; text-underline-offset: 4px; font-weight: 600; }
+                                            pre, code { background-color: #050508; font-family: 'JetBrains Mono', monospace; }
+                                            pre { padding: 12px; border-radius: 8px; overflow-x: auto; color: #14B8A6; border: 1px solid #2A2A35; border-left: 3px solid #14B8A6; }
                                         </style>
                                     </head>
                                     <body>$bodyHtml</body>
@@ -207,6 +297,140 @@ fun DetailScreen(
                         Spacer(modifier = Modifier.height(40.dp))
                     }
                 }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI Insights composable — handles all 3 UI states
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun AiInsightsSection(
+    aiSummary: String?,
+    isSummarizing: Boolean,
+    summaryVisible: Boolean,
+    onGenerateClick: () -> Unit
+) {
+    val cornerShape = RoundedCornerShape(12.dp)
+
+    when {
+        // ── State 2: Loading ─────────────────────────────────────────────────
+        isSummarizing -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(cornerShape)
+                    .background(MatteCharcoal)
+                    .border(1.dp, ElectricIndigo.copy(alpha = 0.4f), cornerShape)
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "GENERATING INSIGHTS...",
+                    fontFamily = JetBrain,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NeonTeal,
+                    letterSpacing = 1.5.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp)
+                        .clip(RoundedCornerShape(1.dp)),
+                    color = ElectricIndigo,
+                    trackColor = ElectricIndigo.copy(alpha = 0.15f)
+                )
+            }
+        }
+
+        // ── State 3: Summary available ───────────────────────────────────────
+        aiSummary != null -> {
+            AnimatedVisibility(
+                visible = summaryVisible,
+                enter = fadeIn(animationSpec = tween(durationMillis = 600))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .clip(cornerShape)
+                        .background(ElectricIndigo.copy(alpha = 0.10f))
+                        .border(1.dp, ElectricIndigo.copy(alpha = 0.30f), cornerShape)
+                        .padding(16.dp)
+                ) {
+                    // Header
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.AutoAwesome,
+                            contentDescription = null,
+                            tint = ElectricIndigo,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "AI KEY INSIGHTS",
+                            fontFamily = JetBrain,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ElectricIndigo,
+                            letterSpacing = 1.5.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider(color = ElectricIndigo.copy(alpha = 0.20f), thickness = 1.dp)
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Body — split on newlines so each bullet is its own Text
+                    aiSummary.lines()
+                        .filter { it.isNotBlank() }
+                        .forEach { line ->
+                            Text(
+                                text = line.trim(),
+                                fontFamily = Inter,
+                                fontSize = 14.sp,
+                                lineHeight = 22.sp,
+                                color = Color(0xFFF8FAFC),
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            )
+                        }
+                }
+            }
+        }
+
+        // ── State 1: No summary yet — show Generate button ───────────────────
+        else -> {
+            Button(
+                onClick = onGenerateClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(52.dp)
+                    .border(1.dp, ElectricIndigo, cornerShape),
+                shape = cornerShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MatteCharcoal,
+                    contentColor = NeonTeal
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.AutoAwesome,
+                    contentDescription = null,
+                    tint = NeonTeal,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "✨ Generate AI Key Insights",
+                    fontFamily = JetBrain,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = NeonTeal
+                )
             }
         }
     }

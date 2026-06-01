@@ -1,21 +1,24 @@
 # Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Retrofit & OkHttp
+-keepattributes Signature, InnerClasses, EnclosingMethod
+-keep class retrofit2.** { *; }
+-keepclassmembers class * extends retrofit2.Retrofit { *; }
+-keep class okhttp3.** { *; }
+-keep class okio.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# DTOs / Network Models (Gson/Retrofit)
+-keep class com.example.pulse.network.** { *; }
+-keepclassmembers class com.example.pulse.network.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Room Database Entities
+-keep class com.example.pulse.database.** { *; }
+-keepclassmembers class com.example.pulse.database.** { *; }
+
+# Jetpack Compose
+-keep class androidx.compose.** { *; }
+-keepclassmembers class androidx.compose.** { *; }
+
+# General
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

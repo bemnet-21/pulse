@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             PulseTheme {
                 val navController = rememberNavController()
-                NavHost(navController = navController, startDestination = "welcome") {
+                NavHost(navController = navController, startDestination = "feed") {
                     composable("welcome") {
                         WelcomeScreen(
                             onNavigateToFeed = {

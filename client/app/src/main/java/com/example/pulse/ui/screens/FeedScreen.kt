@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -105,22 +105,22 @@ fun PulseBottomBar(
             )
         )
 
-        NavigationBarItem(
-            selected = currentRoute == NavRoute.Profile,
-            onClick = { onNavigate(NavRoute.Profile) },
-            icon = {
-                Icon(
-                    imageVector = if (currentRoute == NavRoute.Profile) Icons.Filled.Person else Icons.Outlined.Person,
-                    contentDescription = "Profile"
-                )
-            },
-            label = { Text("Profile") },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.primary,
-                selectedTextColor = MaterialTheme.colorScheme.primary,
-                indicatorColor = MaterialTheme.colorScheme.surface
-            )
-        )
+//        NavigationBarItem(
+//            selected = currentRoute == NavRoute.Profile,
+//            onClick = { onNavigate(NavRoute.Profile) },
+//            icon = {
+//                Icon(
+//                    imageVector = if (currentRoute == NavRoute.Profile) Icons.Filled.Person else Icons.Outlined.Person,
+//                    contentDescription = "Profile"
+//                )
+//            },
+//            label = { Text("Profile") },
+//            colors = NavigationBarItemDefaults.colors(
+//                selectedIconColor = MaterialTheme.colorScheme.primary,
+//                selectedTextColor = MaterialTheme.colorScheme.primary,
+//                indicatorColor = MaterialTheme.colorScheme.surface
+//            )
+//        )
     }
 }
 
@@ -216,7 +216,7 @@ fun FeedScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "<DevPulse />",
+                        text = "<Pulse />",
                         fontFamily = FontFamily.Monospace,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
@@ -263,29 +263,95 @@ fun FeedScreen(
                         }
                     }
                     is FeedUiState.Error -> {
-                        Text(
-                            text = (uiState as FeedUiState.Error).message,
-                            color = Color.Red,
-                            modifier = Modifier.align(Alignment.Center).padding(16.dp)
-                        )
+                        val cachedArticles by bookmarkViewModel.bookmarkedArticles.collectAsState()
+                        if (cachedArticles.isEmpty()) {
+                            Text(
+                                text = (uiState as FeedUiState.Error).message,
+                                color = Color.Red,
+                                modifier = Modifier.align(Alignment.Center).padding(16.dp)
+                            )
+                        } else {
+                            // Show Offline Cache
+                            val articles = cachedArticles.map { 
+                                DevToArticle(
+                                    id = it.id,
+                                    title = it.title,
+                                    description = it.description,
+                                    tags = it.tags.joinToString(","),
+                                    reading_time_minutes = it.reading_time_minutes,
+                                    cover_image = it.coverImage
+                                )
+                            }
+                            
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                    items(articles) { article ->
+                                        Box(modifier = Modifier.clickable { onArticleClick(article.id) }) {
+                                            ArticleCard(article, isBookmarked = true)
+                                        }
+                                    }
+                                    item { Spacer(modifier = Modifier.height(80.dp)) }
+                                }
+                                
+                                // Offline Chip Overlay
+                                Surface(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .padding(bottom = 16.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = Color(0xFF15151C), // MatteCharcoal
+                                    border = BorderStroke(1.dp, Color(0xFF2A2A35))
+                                ) {
+                                    Text(
+                                        text = "Offline Mode: Reading from Cache",
+                                        color = Color(0xFF94A3B8), // SlateGray
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                     is FeedUiState.Success -> {
                         val articlesResponse = (uiState as FeedUiState.Success).articles
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            items(articlesResponse.data) { article ->
-                                Box(
-                                    modifier = Modifier.clickable {
-                                        onArticleClick(article.id)
-                                    }
-                                ) {
-                                    val isBookmarked by bookmarkViewModel.checkIsBookmarked(article.id).collectAsState()
-                                    ArticleCard(article, isBookmarked)
-                                }
+                        val filteredArticles = articlesResponse.data
+                        
+                        if (filteredArticles.isEmpty()) {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.SearchOff,
+                                    contentDescription = "No articles",
+                                    tint = Color(0xFF94A3B8), // SlateGray
+                                    modifier = Modifier.size(64.dp)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "No articles found. Try a different keyword.",
+                                    color = Color(0xFF94A3B8),
+                                    fontSize = 16.sp
+                                )
                             }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                items(filteredArticles) { article ->
+                                    Box(
+                                        modifier = Modifier.clickable {
+                                            onArticleClick(article.id)
+                                        }
+                                    ) {
+                                        val isBookmarked by bookmarkViewModel.checkIsBookmarked(article.id).collectAsState()
+                                        ArticleCard(article, isBookmarked)
+                                    }
+                                }
 
-                            item { Spacer(modifier = Modifier.height(24.dp)) }
+                                item { Spacer(modifier = Modifier.height(24.dp)) }
+                            }
                         }
                     }
                 }

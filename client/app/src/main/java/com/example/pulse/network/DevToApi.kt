@@ -1,6 +1,7 @@
 package com.example.pulse.network
 
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -9,6 +10,7 @@ data class ApiResponse<T>(
     val data: T,
     val message: String
 )
+
 data class DevToArticle(
     val id: Int,
     val title: String,
@@ -33,8 +35,15 @@ data class DevToArticleDetail(
     val published_at: String,
     val user: DevToUser,
     val tags: String,
-    val description: String
+    val description: String,
+    val ai_summary: String? = null
 )
+
+/** Returned by POST articles/{id}/summarize */
+data class SummarizeResponse(
+    val ai_summary: String
+)
+
 interface DevToApi {
     @GET("articles")
     suspend fun getArticles(
@@ -46,4 +55,10 @@ interface DevToApi {
     suspend fun getArticleById(
         @Path("id") articleId: Int
     ): ApiResponse<DevToArticleDetail>
+
+    /** Triggers lazy AI summary generation (or returns cached result). */
+    @POST("articles/{id}/summarize")
+    suspend fun summarizeArticle(
+        @Path("id") articleId: Int
+    ): ApiResponse<SummarizeResponse>
 }
