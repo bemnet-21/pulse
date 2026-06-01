@@ -76,9 +76,6 @@ class ArticleViewModel(application: Application): AndroidViewModel(application) 
                 val response = RetrofitInstance.api.summarizeArticle(id)
                 _aiSummary.value = response.data.ai_summary
             } catch (e: Exception) {
-                if (com.example.pulse.BuildConfig.DEBUG) {
-                    Log.e("ArticleViewModel", "AI Summarization Error: ${e.message}", e)
-                }
                 _aiError.emit("AI Insights currently unavailable. Please try again later.")
             } finally {
                 _isSummarizing.value = false

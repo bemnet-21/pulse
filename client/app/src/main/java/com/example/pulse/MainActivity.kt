@@ -25,8 +25,11 @@ import com.example.pulse.ui.screens.WelcomeScreen
 import com.example.pulse.ui.theme.PulseTheme
 import com.yourname.devpulse.ui.screens.BookmarksScreen
 
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {

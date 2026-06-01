@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.BookmarkBorder
@@ -265,11 +266,31 @@ fun FeedScreen(
                     is FeedUiState.Error -> {
                         val cachedArticles by bookmarkViewModel.bookmarkedArticles.collectAsState()
                         if (cachedArticles.isEmpty()) {
-                            Text(
-                                text = (uiState as FeedUiState.Error).message,
-                                color = Color.Red,
-                                modifier = Modifier.align(Alignment.Center).padding(16.dp)
-                            )
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.CloudOff,
+                                    contentDescription = "Offline",
+                                    tint = Color(0xFF94A3B8), // SlateGray
+                                    modifier = Modifier.size(64.dp)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "Offline Mode",
+                                    color = Color(0xFFF8FAFC), // CloudWhite
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "No bookmarks available to read offline.",
+                                    color = Color(0xFF94A3B8),
+                                    fontSize = 14.sp
+                                )
+                            }
                         } else {
                             // Show Offline Cache
                             val articles = cachedArticles.map { 
