@@ -9,6 +9,10 @@ const port = 8080;
 
 app.use(express.json());
 
+app.get('/api/v1/health', (_req, res) => {
+    res.status(200).json({ status: 'ok' });
+})
+
 app.listen(port, () => {
 })
 
